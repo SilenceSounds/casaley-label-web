@@ -113,6 +113,15 @@ namespace WebApplication5
         // Simbolo de $
         public string REPLACE_POSITION_OFE_SIM_PRICE = "REPLACE_POSITION_OFE_SIM_PRIC";
 
+        public string REPLACE_SINGLE_UNIT = "REPLACE_SINGLE_UNIT";
+
+        public string REPLACE_CALCULATED_CENTS_BOX = "REPLACE_CALCULATED_CENTS_BOX";
+
+
+        // Nuevas 
+        public string REPLACE_Y_POSITION_OFFER_CENTS = "REPLACE_Y_POSITION_CENTS_OFFER";
+        public string REPLACE_X_INITIAL_CENTS_POSITION = "REPLACE_X_INITIAL_CENTS_POSITION";
+
         #endregion
 
         public MasterLabel()
@@ -133,13 +142,19 @@ namespace WebApplication5
 
         public string Generate(string templateType, int amount, int labelType)
         {
-
+            OfferPrice = "99,999.00";
+            Price = "99,999.00";
             try
             {
+
+                string pattern = @"_\d+/";
+                ItemName = Regex.Replace(ItemName, pattern, " ");
+
                 ItemName = ItemName.Replace("#", "_C3_91");
                 ItemName = ItemName.Replace("Ñ", "_C3_91");
                 ItemName = ItemName.Replace("ñ", "_C3_B1");
-            } catch
+            }
+            catch
             {
 
             }
@@ -153,48 +168,104 @@ namespace WebApplication5
 
                     try
                     {
-                        Price = float.Parse(Price).ToString("F2");
-                        OfferPrice = float.Parse(OfferPrice).ToString("F2");
+                        Price = float.Parse(Price).ToString("C2");
+                        OfferPrice = float.Parse(OfferPrice).ToString("C2");
 
-                        CustomLabel = CustomLabel.Replace(REPLACE_PRICE, "$" + OfferPrice.Split('.')[0]);
-                        CustomLabel = CustomLabel.Replace(REPLACE_PRICE_CENTS, OfferPrice.Split('.')[1]);
+                        Price = Price.Replace("$", "");
+                        OfferPrice = OfferPrice.Replace("$", "");
+
+                        OfferPrice = "99.00";
+                        Price = "99.00";
+
+                        if (labelType == LABEL_TYPE_MOBILE)
+                        {
+                            CustomLabel = CustomLabel.Replace(REPLACE_PRICE, "$" + Price);
+
+
+                            if (!string.IsNullOrEmpty(Unidad))
+                            {
+                                string singleUnit = Regex.Replace(Unidad, @"\d", "");
+                                singleUnit = singleUnit.Trim();
+
+                                if (singleUnit.Equals("PZ") || singleUnit.Equals("KG"))
+                                {
+                                    CustomLabel = CustomLabel.Replace(REPLACE_SINGLE_UNIT, singleUnit);
+                                }
+                                else
+                                {
+                                    CustomLabel = CustomLabel.Replace(REPLACE_SINGLE_UNIT, string.Empty);
+
+                                }
+
+                            }
+                        }
+                        else
+                        {
+                            CustomLabel = CustomLabel.Replace(REPLACE_PRICE, "$" + Price.Split('.')[0]);
+                            CustomLabel = CustomLabel.Replace(REPLACE_PRICE_CENTS, Price.Split('.')[1]);
+                        }
+
                     }
-                    catch { }
+                    catch
+                    {
+                        CustomLabel = CustomLabel.Replace(REPLACE_SINGLE_UNIT, string.Empty);
+
+                    }
 
 
                     if (labelType == LABEL_TYPE_MOBILE)
                     {
                         CustomLabel = CustomLabel.Replace(REPLACE_POSITION_OFEPRICE, GetPositionX(370, OfferPrice.Split('.')[0].Length, 60));
                         CustomLabel = CustomLabel.Replace(REPLACE_POSITION_OFE_SIM_PRICE, GetPositionX(350, OfferPrice.Split('.')[0].Length, 60));
+
+
+
                     }
                     else
                     {
 
                         OfferPrice = "$" + OfferPrice;
 
-                        bool adjust = OfferPrice.Split(',')[0].Length > 4;
-                        int offerPriceFont = 130;
-                        int offerPriceCentsFont = 50;
+                        bool adjust = OfferPrice.Split('.')[0].Length > 4;
+                        int offerPriceFont = 170;
+                        int offerPriceCentsFont = 80;
 
                         if (adjust)
                         {
-                            CustomLabel = CustomLabel.Replace(REPLACE_POSITION_OFEPRICE, GetPositionX(150, OfferPrice.Split('.')[0].Length - 1, 27));
-                            CustomLabel = CustomLabel.Replace(REPLACE_POSITION_OFEPRICE_CENTS, GetPositionX(270, OfferPrice.Split('.')[0].Length - 1, -17));
+                            CustomLabel = CustomLabel.Replace("REPLACE_CENT_Y_POSITION_OFEPRICE", 495.ToString());
 
-                            offerPriceFont = offerPriceFont - 25;
-                            offerPriceCentsFont = offerPriceCentsFont - 10;
+
+                            offerPriceFont = offerPriceFont - 90;
+                            offerPriceCentsFont = offerPriceFont / 2;
+
+                            CustomLabel = CustomLabel.Replace(REPLACE_Y_POSITION_OFFER_CENTS, (580 - (offerPriceFont / 2)).ToString());
+
+                            int calculatedCentBox = 380 - 20 * (6 - (OfferPrice.Split('.')[0].Length - 2));
+
+
+                            CustomLabel = CustomLabel.Replace(REPLACE_CALCULATED_CENTS_BOX, calculatedCentBox.ToString());
+
                         }
                         else
                         {
-                            CustomLabel = CustomLabel.Replace(REPLACE_POSITION_OFEPRICE, GetPositionX(180, OfferPrice.Split('.')[0].Length - 1, 30));
-                            CustomLabel = CustomLabel.Replace(REPLACE_POSITION_OFEPRICE_CENTS, GetPositionX(230, OfferPrice.Split('.')[0].Length - 1, -25));
+
+                            offerPriceFont =  130;
+
+                            CustomLabel = CustomLabel.Replace("REPLACE_CENT_Y_POSITION_OFEPRICE", 495.ToString());
+                            offerPriceCentsFont = offerPriceFont / 2;
+
+                            CustomLabel = CustomLabel.Replace(REPLACE_Y_POSITION_OFFER_CENTS, (580 - (offerPriceFont / 2)).ToString());
+
+                            int calculatedCentBox = 370 - 35 * (3 - (OfferPrice.Split('.')[0].Length - 1));
+                            CustomLabel = CustomLabel.Replace(REPLACE_CALCULATED_CENTS_BOX, calculatedCentBox.ToString());
+
                         }
 
                         CustomLabel = CustomLabel.Replace(REPLACE_FONT_OFEPRICE, offerPriceFont.ToString());
                         CustomLabel = CustomLabel.Replace(REPLACE_FONT_OFEPRICE_CENTS, offerPriceCentsFont.ToString());
                         CustomLabel = CustomLabel.Replace(REPLACE_POSITION_OFEPRICE_CENTS, GetPositionX(90, OfferPrice.Split('.')[0].Length, -30));
 
-                        
+
                     }
 
 
@@ -210,11 +281,29 @@ namespace WebApplication5
                         Price = float.Parse(Price).ToString("F2");
                         OfferPrice = float.Parse(OfferPrice).ToString("F2");
 
-                        CustomLabel = CustomLabel.Replace(REPLACE_PRICE, "$" + OfferPrice.Split('.')[0]);
-                        CustomLabel = CustomLabel.Replace(REPLACE_PRICE_CENTS, OfferPrice.Split('.')[1]);
+                        OfferPrice = "9,999.00";
+                        Price = "9,999.00";
 
-                        CustomLabel = CustomLabel.Replace(REPLACE_OFFER_PRICE_CENTS, OfferPrice.Split('.')[1]);
-                        CustomLabel = CustomLabel.Replace(REPLACE_OFFER_PRICE, "$" + OfferPrice.Split('.')[0]);
+                        if (labelType == LABEL_TYPE_MOBILE)
+                        {
+                            CustomLabel = CustomLabel.Replace(REPLACE_PRICE, "$" + Price);
+                            CustomLabel = CustomLabel.Replace(REPLACE_PRICE_CENTS, string.Empty);
+
+                            CustomLabel = CustomLabel.Replace(REPLACE_OFFER_PRICE, "$" + OfferPrice);
+                            CustomLabel = CustomLabel.Replace(REPLACE_OFFER_PRICE_CENTS, "");
+
+
+                        }
+                        else
+                        {
+                            CustomLabel = CustomLabel.Replace(REPLACE_PRICE, "$" + Price);
+
+
+                            CustomLabel = CustomLabel.Replace(REPLACE_OFFER_PRICE_CENTS, OfferPrice.Split('.')[1]);
+                            CustomLabel = CustomLabel.Replace(REPLACE_OFFER_PRICE, "$" + OfferPrice.Split('.')[0]);
+                        }
+
+
                     }
                     catch { }
 
@@ -229,14 +318,30 @@ namespace WebApplication5
 
                     if (labelType == LABEL_TYPE_MOBILE)
                     {
-                        CustomLabel = CustomLabel.Replace(REPLACE_POSITION_PRICE_CENTS, GetPositionX(75, Price.Split('.')[0].Length, -30));
+                        CustomLabel = CustomLabel.Replace(REPLACE_POSITION_PRICE_CENTS, GetPositionX(75, Price.Split('.')[0].Length, -35));
                         CustomLabel = CustomLabel.Replace(REPLACE_OFFER_CENT_POSITION, GetPositionX(460, OfferPrice.Split('.')[0].Length + 1, -20));
 
                     }
                     else
                     {
-                        CustomLabel = CustomLabel.Replace(REPLACE_POSITION_PRICE_CENTS, GetPositionX(90, Price.Split('.')[0].Length, -30));
-                        CustomLabel = CustomLabel.Replace(REPLACE_OFFER_CENT_POSITION, GetPositionX(230, OfferPrice.Split('.')[0].Length + 1, -30));
+                        if (OfferPrice.Split('.')[0].Length > 4)
+                        {
+                            CustomLabel = CustomLabel.Replace("PRICE_OFFER_POSITION", 100.ToString());
+                            CustomLabel = CustomLabel.Replace(REPLACE_OFFER_CENT_POSITION, GetPositionX(170, OfferPrice.Split('.')[0].Length + 1, -30));
+
+
+
+                        }
+                        else
+                        {
+                            CustomLabel = CustomLabel.Replace("PRICE_OFFER_POSITION", 170.ToString());
+                            CustomLabel = CustomLabel.Replace(REPLACE_OFFER_CENT_POSITION, GetPositionX(230, OfferPrice.Split('.')[0].Length + 1, -30));
+
+
+
+                        }
+
+
                     }
 
 
@@ -253,14 +358,23 @@ namespace WebApplication5
                     CustomLabel = CustomLabel.Replace(REPLACE_LABEL_PASILLO, Pasillo);
                     CustomLabel = CustomLabel.Replace(REPLACE_LABEL_DISCOUNT, Discount.Split('.')[0]);
                     CustomLabel = CustomLabel.Replace(REPLACE_EXPIRATION, ExpirationDate.Replace("12:00:00 a. m.", ""));
-                    CustomLabel = CustomLabel.Replace(REPLACE_TITLE, ItemName);
 
                     if (labelType == LABEL_TYPE_MOBILE)
                     {
                         CustomLabel = CustomLabel.Replace(REPLACE_PERCENTAGE_POSITION, GetPositionX(240, 2, 100));
+
+                        string tile = splitText(ItemName, true);
+                        string sub = splitText(ItemName, false);
+
+                        CustomLabel = CustomLabel.Replace(REPLACE_TITLE, tile);
+                        CustomLabel = CustomLabel.Replace(REPLACE_SUBTITLE, sub);
+
+
                     }
                     else
                     {
+                        CustomLabel = CustomLabel.Replace(REPLACE_TITLE, ItemName);
+
                         CustomLabel = CustomLabel.Replace(REPLACE_PERCENTAGE_POSITION, GetPositionX(150, 2, 50));
                         CustomLabel = CustomLabel.Replace(REPLACE_PERCENTAGE_SIMBOL_POSITION, GetPositionX(250, 2, -50));
                     }
@@ -292,23 +406,36 @@ namespace WebApplication5
 
                         CustomLabel = CustomLabel.Replace(REPLACE_TITLE, ItemName);
 
+                        if (ItemName.Length > 42)
+                        {
+                            CustomLabel = CustomLabel.Replace("REPLACE_FONT_PRICE", 35.ToString());
+
+                        }
+                        else
+                        {
+                            CustomLabel = CustomLabel.Replace("REPLACE_FONT_PRICE", 43.ToString());
+
+                        }
+
+
+
                         bool adjust = OfferPrice.Split('.')[0].Length > 4;
-                        int offerPriceFont = 140;
-                        int offerPriceCentsFont = 60;
+                        int offerPriceFont = 150;
+                        int offerPriceCentsFont = 70;
 
                         if (adjust)
                         {
                             CustomLabel = CustomLabel.Replace(REPLACE_POSITION_OFEPRICE, GetPositionX(140, OfferPrice.Split('.')[0].Length - 1, 25));
-                            CustomLabel = CustomLabel.Replace(REPLACE_POSITION_OFEPRICE_CENTS, GetPositionX(240, OfferPrice.Split('.')[0].Length - 1, -25));
+                            CustomLabel = CustomLabel.Replace(REPLACE_POSITION_OFEPRICE_CENTS, GetPositionX(240, OfferPrice.Split('.')[0].Length - 1, -30));
 
                             offerPriceFont = offerPriceFont - 38;
                             offerPriceCentsFont = offerPriceCentsFont - 13;
                         }
                         else
                         {
-                            
+
                             CustomLabel = CustomLabel.Replace(REPLACE_POSITION_OFEPRICE, GetPositionX(130, OfferPrice.Split('.')[0].Length - 1, 40));
-                            CustomLabel = CustomLabel.Replace(REPLACE_POSITION_OFEPRICE_CENTS, GetPositionX(270, OfferPrice.Split('.')[0].Length -1 , -25));
+                            CustomLabel = CustomLabel.Replace(REPLACE_POSITION_OFEPRICE_CENTS, GetPositionX(270, OfferPrice.Split('.')[0].Length - 1, -30));
                         }
 
                         CustomLabel = CustomLabel.Replace(REPLACE_FONT_OFEPRICE, offerPriceFont.ToString());
@@ -323,6 +450,7 @@ namespace WebApplication5
 
                 case CANT_CANT2:
                 case CANT_CANT1:
+                    OfferPrice = "3X2";
 
                     CustomLabel = labelType == LABEL_TYPE_ORIGINAL ? WebTemplate_CANTCANT : MobileTemplate_CANTCANT;
                     //OFFER PRICE 3X2 
@@ -330,7 +458,22 @@ namespace WebApplication5
                     //CustomLabel = CustomLabel.Replace(REPLACE_LABEL_PLANO, Plan.Substring(0,3));
                     CustomLabel = CustomLabel.Replace(REPLACE_LABEL_CANT1, OfferPrice.Split('X')[0]);
                     CustomLabel = CustomLabel.Replace(REPLACE_LABEL_CANT2, OfferPrice.Split('X')[1]);
-                    CustomLabel = CustomLabel.Replace(REPLACE_TITLE, ItemName);
+
+                    if (labelType == LABEL_TYPE_MOBILE)
+                    {
+                        string tile = splitText(ItemName, true);
+                        string sub = splitText(ItemName, false);
+
+                        CustomLabel = CustomLabel.Replace(REPLACE_TITLE, tile);
+                        CustomLabel = CustomLabel.Replace(REPLACE_SUBTITLE, sub);
+
+                    }
+                    else
+                    {
+                        CustomLabel = CustomLabel.Replace(REPLACE_TITLE, ItemName);
+
+                    }
+
                     break;
 
                 case VENTA_REGALO_1:
@@ -390,6 +533,11 @@ namespace WebApplication5
         }
 
         #region Aditional Methdos
+
+        private string CreateWhiteSpaceString(int amount)
+        {
+            return new string(' ', amount);
+        }
 
         private string GetPositionX(int currentPosition, int lenght, int increment)
         {
@@ -457,7 +605,7 @@ namespace WebApplication5
                     "^FT30,190^FD^A0N,62,59^FH\\^CI28^FDORIGINAL_PRICE^FS\n" +
                     "^FTCENT_POSITION,152^FD^A0N,32,29^FH\\^FDPRICE_CENTS_ORIGINAL^FS\n" +
 
-                    "^BY1,2,30\n" + 
+                    "^BY1,2,30\n" +
                     "^FO30,215^BCN,,Y,N,N,N^FDLABEL_UPC^FS\n" +
 
 
@@ -467,10 +615,14 @@ namespace WebApplication5
                     "^FT325,250^FD^ALN,9,9^FH\\^CI28^FDDEP: LABEL_DEPARTMENT^FS^CI27\n" +
                     "^FX Body\n" +
                     "^FT30,340^FB346,1,,C^FD^A0N,42,39^FH\\^FDPRECIO OFERTA LEY^FS\n" +
-                    "^FTREPLACE_POSITION_OFEPRICE,600^CF0,REPLACE_FONT_OFEPRICE^FH\\^FDOFFER_PRICE^FS\n" +
-                    "^FTREPLACE_CENT_POSITION_OFEPRICE,520^CF0,REPLACE_CENT_FONT_OFEPRICE^FH\\^FDPRICE_CENTS_OFFER^FS\n" +
-                    "^FT30,780^FD^ALN,17,17^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
-                    "^FT315,760^BQN,2,2^FDHM,NREPLACE_LABEL_QR^FS\n" +
+
+
+                    "^FT13,580^^FB380,1,0,C,0^CF0,REPLACE_FONT_OFEPRICE^FH\\^FDOFFER_PRICE^FS\n" +
+                    "^FT0,REPLACE_Y_POSITION_CENTS_OFFER,^FBREPLACE_CALCULATED_CENTS_BOX,1,0,R,0^CF0,REPLACE_CENT_FONT_OFEPRICE^FH\\^FDPRICE_CENTS_OFFER^FS\n" +
+
+
+                    "^FT40,790^FD^ALN,30,20^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
+                    "^FT320,780^BQN,2,2^FDHM,NREPLACE_LABEL_QR^FS\n" +
                     "^PQLABEL_AMOUNT" +
                     "^XZ";
 
@@ -481,8 +633,8 @@ namespace WebApplication5
             "^LL0609\n" +
             "^LS0\n" +
             "^CI28\n" +
-            "^FT30,230^FB550,1,,L^FD^A0N,66,60^FH\\^FDLABEL_TITLE^FS\n" +
-            "^FT35,290^FB550,2,,L^FD^ALN,30,30^FH\\^FDLABEL_SUBTITLE^FS \n" +
+            "^FT30,230^FB550,1,,L^FD^A0N,66,60^FH^FDLABEL_TITLE^FS\n" +
+            "^FT35,290^FB550,2,,L^FD^ALN,30,30^FH^FDLABEL_SUBTITLE^FS \n" +
             "^FT35,340^ALN,31,31^FH\\^FDDE:^FS\n" +
 
             "^FT85,340^FB300,1,,L^ALN,31,31^FH\\^FDORIGINAL_PRICE^FS\n" +
@@ -490,7 +642,11 @@ namespace WebApplication5
             "^FTREPLACE_POSITION_OFE_SIM_PRICE,405^CF0,40^FH\\^FDREPLACE_SIMBOL_TEXT^FS\n" +
             "^FTREPLACE_POSITION_OFEPRICE,480^CF0,140^FH\\^FDOFFER_PRICE^FS\n" +
             "^FT450,405^CF0,45^FH\\^FDPRICE_CENTS_OFFER^FS\n" +
-            "^FT50,510^BY2^BEN,15,Y,N\n" +
+
+                        "^FT490,470^CF0,45^FH\\^FDREPLACE_SINGLE_UNIT^FS\n" +
+
+
+            "^FT50,520^BY2^BEN,15,Y,N\n" +
             "^FDLABEL_UPC^FS\n" +
             "^FT30,575^FD^ALN,26,26^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
             "^FT340,575^FD^ALN,26,26^FH\\^CI28^FDDEP: LABEL_DEPARTMENT^FS^CI27\n" +
@@ -526,11 +682,11 @@ namespace WebApplication5
                     "^FX Body\n" +
                     "^FT30,340^FB346,1,,C^FD^A0N,42,39^FH\\^FDOFERTA LEY^FS\n" +
                     "^FT20,500^FB406,1,,C^CF0,140^FH\\^FDLABEL_DISCOUNT%^FS\n" +
-                    "^FT50,580^FD^A0N,32,29^FH\\^FDUSTED PAGA:^FS\n" +
-                    "^FT170,670^FD^A0N,78,78^FH\\^FDOFFER_PRICE^FS\n" +
+                    "^FT50,580^FD^A0N,35,35^FH\\^FDUSTED PAGA:^FS\n" +
+                    "^FTPRICE_OFFER_POSITION,670^FD^A0N,78,78^FH\\^FDOFFER_PRICE^FS\n" +
                     "^FTCENT_OFFER_POSITION,622^FD^A0N,32,29^FH\\^FDPRICE_CENTS_OFFER^FS\n" +
-                    "^FT35,790^FD^ALN,23,23^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
-                    "^FT321,773^BQN,2,2^FDHM,NREPLACE_LABEL_QR^FS\n" +
+                    "^FT40,790^FD^ALN,30,20^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
+                    "^FT320,780^BQN,2,2^FDHM,NREPLACE_LABEL_QR^FS\n" +
                     "^PQLABEL_AMOUNT" +
                     "^XZ";
 
@@ -542,25 +698,24 @@ namespace WebApplication5
             "^LL0508\n" +
             "^LS0\n" +
             "^CI28\n" +
-            "^FT30,230^FB550,1,,L^FD^A0N,66,60^FH\\^FDLABEL_TITLE^FS\n" +
-            "^FT35,290^FB550,2,,L^FD^ALN,30,30^FH\\^FDLABEL_SUBTITLE^FS \n" +
+            "^FT30,230^FB550,1,,L^FD^A0N,66,60^FH^FDLABEL_TITLE^FS\n" +
+            "^FT35,290^FB550,2,,L^FD^ALN,30,30^FH^FDLABEL_SUBTITLE^FS \n" +
 
             "^FT34,310^^ALN,20,20^FH\\^FDDE:^FS\n" +
             "^FT35,310^^ALN,20,20^FH\\^FDDE:^FS\n" +
 
 
-            "^FT75,325^FB200,1,,L^ALN,35,35^FH^FDORIGINAL_PRICE^FS\n" +
+            "^FT75,315^FB200,1,,L^ALN,35,35^FH^FDORIGINAL_PRICE^FS\n" +
             "^FTCENT_POSITION,310^FB60,1,,L^ALN,20,20^FH\\^FDPRICE_CENTS_ORIGINAL^FS\n" +
             "^FTPERCENTAGE_POSITION,440^CF0,160^FH\\^FDLABEL_DISCOUNT^FS\n" +
             "^FT330,440^CF0,90^FH\\^FD%^FS\n" +
             "^FT424,450^FB550,2,,L^FD^ALN,33,33^FH\\^FDDESCUENTO^FS" +
 
 
-            "^FT319,495^ALN,20,20^FH\\^FDUSTED PAGA:^FS\n" +
-            "^FT320,495^ALN,20,20^FH\\^FDUSTED PAGA:^FS\n" +
-            "^FT440,495^FB300,1,,L^ALN,40,40^FH^FDOFFER_PRICE^FS\n" +
+            "^FT309,495^ALN,20,20^FH\\^FDUSTED PAGA:^FS\n" +
+            "^FT310,495^ALN,20,20^FH\\^FDUSTED PAGA:^FS\n" +
+            "^FT430,495^FB300,1,,L^ALN,40,40^FH^FDOFFER_PRICE^FS\n" +
 
-            "^FTCENT_OFFER_POSITION,462^FB200,1,,L^ALN,20,20^FH\\^FDPRICE_CENTS_OFFER^FS\n" +
             "^FT50,500^BY2^BEN,15,Y,N\n" +
             "^FDLABEL_UPC^FS\n" +
             "^FT30,575^FD^ALN,26,26^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
@@ -588,8 +743,8 @@ namespace WebApplication5
                     "^FTPERCENTAGE_POSITION,600^CF0,220^FH\\^FDLABEL_DISCOUNT^FS\n" +
                     "^FTPERCENTAGE_SIMBOL_POSITION,450^CF0,60^FH\\^FD%^FS\n" +
                     "^FT210,640^CF0,25^FH\\^FDDESCUENTO^FS\n" +
-                    "^FT30,780^FD^ALN,17,17^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
-                    "^FT315,760^BQN,2,2^FDHM,NREPLACE_LABEL_QR^FS\n" +
+                    "^FT40,790^FD^ALN,30,20^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
+                    "^FT320,780^BQN,2,2^FDHM,NREPLACE_LABEL_QR^FS\n" +
                     "^PQLABEL_AMOUNT" +
                     "^XZ";
 
@@ -600,12 +755,12 @@ namespace WebApplication5
             "^LL0508\n" +
             "^LS0\n" +
             "^CI28\n" +
-            "^FT30,230^FB550,1,,L^FD^A0N,66,60^FH\\^FDLABEL_TITLE^FS\n" +
-            "^FT35,290^FB550,2,,L^FD^ALN,30,30^FH\\^FDLABEL_SUBTITLE^FS \n" +
+            "^FT30,230^FB550,1,,L^FD^A0N,66,60^FH^FDLABEL_TITLE^FS\n" +
+            "^FT35,290^FB550,2,,L^FD^ALN,30,30^FH^FDLABEL_SUBTITLE^FS \n" +
             "^FTPERCENTAGE_POSITION,480^CF0,230^FH\\^FDLABEL_DISCOUNT^FS\n" +
             "^FT360,380^CF0,100^FH\\^FD%^FS\n" +
             "^FT360,470^ALN,30,30^FH\\^FDDESCUENTO^FS\n" +
-            "^FT30,575^FD^ALN,26,26^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
+            "^FT35,575^FD^ALN,26,26^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
             "^FT340,575^FD^ALN,26,26^FH\\^CI28^FDDEP: LABEL_DEPARTMENT^FS^CI27\n" +
             "^FT450,575^ALN,26,26^FH\\^CI28^FDPAS: LABEL_PASILLO^FS^CI27\n" +
             "^FT535,555^BQN,2,2 ^FDMREPLACE_LABEL_QR^FS\n" +
@@ -625,10 +780,10 @@ namespace WebApplication5
                                 "^CI28\n" +
 
                     "^FT20,230^FB346,4,,C^FD^ALN,43,43^FH^FDLABEL_TITLE^FS^CI27\n" +
-                    "^FT30,340^FB346,1,,C^FD^A0N,42,39^FH\\^FDOFERTA LEY^FS\n" +
-                    "^FT0,600^FB400,1,,C^CF0,180^FH\\^FDREPLACE_CANT_1XREPLACE_CANT_1^FS\n" +
-                    "^FT30,780^FD^ALN,17,17^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
-                    "^FT315,760^BQN,2,2^FDHM,NREPLACE_LABEL_QR^FS\n" +
+                    "^FT30,340^FB346,1,,C^FD^A0N,46,49^FH\\^FDOFERTA LEY^FS\n" +
+                    "^FT0,600^FB400,1,,C^CF0,180^FH\\^FDREPLACE_CANT_1XREPLACE_CANT_2^FS\n" +
+                    "^FT40,790^FD^ALN,30,20^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
+                    "^FT320,780^BQN,2,2^FDHM,NREPLACE_LABEL_QR^FS\n" +
                     "^PQLABEL_AMOUNT" +
                     "^XZ";
 
@@ -640,8 +795,8 @@ namespace WebApplication5
             "^LL0508\n" +
             "^LS0\n" +
             "^CI28\n" +
-            "^FT30,230^FB550,1,,L^FD^A0N,66,60^FH\\^FDLABEL_TITLE^FS\n" +
-            "^FT35,290^FB550,2,,L^FD^ALN,30,30^FH\\^FDLABEL_SUBTITLE^FS \n" +
+            "^FT30,230^FB550,1,,L^FD^A0N,66,60^FH^FDLABEL_TITLE^FS\n" +
+            "^FT35,290^FB550,2,,L^FD^ALN,30,30^FH^FDLABEL_SUBTITLE^FS \n" +
             "^FT10,465^FB230,1,,R^CF0,230^FH\\^FDREPLACE_CANT_1^FS\n" +
             "^FT245,465^CF0,220^FH\\^FDx^FS\n" +
             "^FT355,465^FB230,1,,L^CF0,230^FH\\^FDREPLACE_CANT_2^FS\n" +
@@ -655,6 +810,7 @@ namespace WebApplication5
         // Precio regular
 
 
+
         private const string WebTemplate_CANTPREC =
             "^XA\n" +
                     "^MMT\n" +
@@ -662,14 +818,14 @@ namespace WebApplication5
                     "^LL0812\n" +
                     "^LS0\n" +
                     "^CI28\n" +
-                    "^FT20,230^FB346,4,,C^FD^ALN,43,43^FH^FDLABEL_TITLE^FS^CI27\n" +
-                    "^FT30,450^FB346,1,,C^FD^A0N,60,60^FH\\^FDLABEL_PORX^FS\n" +
-                    "^FT0,340^FB400,1,,C^FD^A0N,42,39^FH\\^FDCOMBO LEY^FS\n" +
+                    "^FT20,230^FB346,4,,C^FD^ALN,REPLACE_FONT_PRICE,REPLACE_FONT_PRICE^FH^FDLABEL_TITLE^FS^CI27\n" +
+                    "^FT30,450^FB346,1,,C^FD^A0N,90,90^FH\\^FDLABEL_PORX^FS\n" +
+                    "^FT0,340^FB400,1,,C^FD^A0N,46,49^FH\\^FDCOMBO LEY^FS\n" +
 
-                    "^FTREPLACE_POSITION_OFEPRICE,600^CF0,REPLACE_FONT_OFEPRICE^FH\\^FDOFFER_PRICE^FS\n" +
-                    "^FTREPLACE_CENT_POSITION_OFEPRICE,510^CF0,REPLACE_CENT_FONT_OFEPRICE^FH\\^FDPRICE_CENTS_OFFER^FS\n" +
-                    "^FT30,780^FD^ALN,17,17^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
-                    "^FT315,760^BQN,2,2^FDHM,NREPLACE_LABEL_QR^FS\n" +
+                    "^FTREPLACE_POSITION_OFEPRICE,620^CF0,REPLACE_FONT_OFEPRICE^FH\\^FDOFFER_PRICE^FS\n" +
+                    "^FTREPLACE_CENT_POSITION_OFEPRICE,540^CF0,REPLACE_CENT_FONT_OFEPRICE^FH\\^FDPRICE_CENTS_OFFER^FS\n" +
+                    "^FT40,790^FD^ALN,30,20^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
+                    "^FT320,780^BQN,2,2^FDHM,NREPLACE_LABEL_QR^FS\n" +
                     "^PQLABEL_AMOUNT\n" +
                     "^XZ";
 
@@ -681,8 +837,8 @@ namespace WebApplication5
                     "^LL0609\n" +
                     "^LS0\n" +
                     "^CI28\n" +
-                    "^FT30,230^FB550,1,,L^FD^A0N,66,60^FH\\^FDLABEL_TITLE^FS\n" +
-                    "^FT35,290^FB550,2,,L^FD^ALN,30,30^FH\\^CI28^FDLABEL_SUBTITLE^FS^CI27\n" +
+                    "^FT30,230^FB550,1,,L^FD^A0N,66,60^FH^FDLABEL_TITLE^FS\n" +
+                    "^FT35,290^FB550,2,,L^FD^ALN,30,30^FH^CI28^FDLABEL_SUBTITLE^FS^CI27\n" +
                     "^FT35,395^FB100,1,,R^A0,105,105^FH\\^FDLABEL_POR^FS" +
                     "^FT150,395^CF0,85^FH\\^FDX^FS" +
                     "^FT240,395^CF0,40^FH\\^FD$^FS\n" +
@@ -704,10 +860,10 @@ namespace WebApplication5
             "^LL0812\n" +
             "^LS0\n" +
             "^CI28\n" +
-            "^FT30,180^FB346,1,,C^FD^A0N,42,39^FH\\^FDOFERTA LEY^FS\n" +
-            "^FT30,620^FB346,7,,C^FD^ALN,43,43^FH^FDREPLACE_DESCRIPTION^FS^CI27\n" +
-            "^FT30,780^FD^ALN,17,17^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
-            "^FT315,760^BQN,2,2^FDHM,NREPLACE_LABEL_QR^FS\n" +
+            "^FT30,180^FB346,1,,C^FD^A0N,49,59^FH\\^FDOFERTA LEY^FS\n" +
+            "^FT30,710^FB346,7,,C^FD^ALN,60,60^FH^FDREPLACE_DESCRIPTION^FS^CI27\n" +
+                    "^FT40,790^FD^ALN,30,20^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
+                    "^FT320,780^BQN,2,2^FDHM,NREPLACE_LABEL_QR^FS\n" +
             "^PQLABEL_AMOUNT" +
             "^XZ";
 
@@ -718,7 +874,7 @@ namespace WebApplication5
                 "^LL0609\n" +
                 "^LS0\n" +
                 "^CI28\n" +
-                "^FT40,480^FB560,4,,C^FD^A0N,75,64^FH\\^FDREPLACE_DESCRIPTION^FS  \n" +
+                "^FT40,480^FB560,4,,C^FD^A0N,75,64^FH^FDREPLACE_DESCRIPTION^FS  \n" +
                 "^FT30,575^FD^ALN,26,26^FH\\^CI28^FDVALIDO HASTA: EXPIRATION_DATE^FS^CI27\n" +
                 "^FT535,555^BQN,2,2 ^FDMREPLACE_LABEL_QR^FS\n" +
                 "^PQLABEL_AMOUNT" +
